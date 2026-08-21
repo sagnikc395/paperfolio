@@ -21,6 +21,13 @@ readable outside the app and travels with the same folder copy that backs up
 everything else. Ideas are the lighter-weight version: one line, captured fast,
 kept in a list per paper.
 
+## Getting it
+
+The landing page in [`website/`](website/) is a static React site meant for
+Vercel; it points people at the latest DMG on the
+[releases page](https://github.com/sagnikc395/paperfolio/releases/latest).
+Deploy it with `cd website && vercel --prod`, then put the URL here.
+
 ## Running it
 
 You need macOS 10.15+, [Node](https://nodejs.org) 20.19+, [Rust](https://rustup.rs)
@@ -83,6 +90,7 @@ webview through Tauri's asset protocol scoped to the uploads directory.
 │       ├── patch.rs         # partial-update helpers
 │       ├── error.rs
 │       └── papers.rs, highlights.rs, notes.rs, ideas.rs
+├── website/                 # landing page (React + Tailwind, static, Vercel)
 └── client/src/
     ├── pages/               # WelcomePage, LibraryPage, PaperPage
     ├── components/          # PdfViewer, HighlightsSidebar, NotesPanel,
