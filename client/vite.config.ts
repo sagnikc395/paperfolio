@@ -11,7 +11,7 @@ export default defineConfig({
     port: 5173,
     strictPort: true,
     watch: {
-      ignored: ["**/src-tauri/**"],
+      ignored: ["**/paperfolio/target/**", "**/paperfolio/gen/**"],
     },
   },
   build: {

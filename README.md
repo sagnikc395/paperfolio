@@ -1,153 +1,96 @@
-# Paperfolio 📚
+# Paperfolio
 
-A native macOS app for reading, highlighting and annotating research papers.
-Each paper gets its own **namespace** where you keep its PDF, the highlighted
-passages, and structured notes and ideas — all stored locally on your Mac.
+A macOS app for reading research papers and keeping what you learn from them.
 
-## Stack
+You import a PDF, read it in the app, highlight as you go, and write notes
+alongside it. Everything about one paper — the PDF, its highlights, its notes,
+the loose ideas it sparked — stays together in that paper's own space, and all of
+it lives on your Mac in a folder you can open, copy and back up yourself.
 
-| Layer    | Tech                                                               |
-| -------- | ------------------------------------------------------------------ |
-| Shell    | Tauri v2 (Rust core + WKWebView)                                   |
-| Frontend | React 18 + TypeScript, Vite, React Router, `react-pdf-highlighter` |
-| Backend  | Rust commands invoked over Tauri IPC                               |
-| Database | SQLite (`rusqlite`, bundled — no server, no Docker)                |
+## What it does
 
-## Features
+Add a paper with whatever metadata you have (title, authors, year, venue, URL,
+abstract) and mark it unread, reading or read. All of it stays editable later.
 
-- **Paper library** — add papers with metadata (title, authors, year, venue, URL,
-  abstract) and a PDF, with a reading status (unread / reading / read).
-- **Per-paper namespace** — every paper has its own PDF, highlights, notes and
-  ideas.
-- **PDF highlighting** — select text in the rendered PDF to highlight it, add a
-  note and an emoji marker. Hover any highlight to review or delete it.
-- **Highlights sidebar** — every highlight listed by page; click to jump to it,
-  edit its note inline.
-- **Editable namespaces** — change a paper's title, authors, year, venue, URL
-  and abstract at any time via **Edit details**; clearing a box clears the field.
-- **Notes** — long-form, titled notes per paper, each editable and deletable.
-- **Ideas** — quick-capture idea list per paper.
-- **Native file dialogs** — PDFs are chosen through the macOS open panel and
-  copied into the app's own storage.
+Select text in the PDF to highlight it, with an optional note and emoji marker.
+The sidebar lists every highlight by page; click one to jump back to it.
 
-## Prerequisites
+Notes are markdown, written in a CodeMirror editor. SQLite is the source of
+truth, but each note is also mirrored to a plain `.md` file so your writing stays
+readable outside the app and travels with the same folder copy that backs up
+everything else. Ideas are the lighter-weight version: one line, captured fast,
+kept in a list per paper.
 
-- macOS 10.15+
-- [Node.js](https://nodejs.org) 20.19+ (or 22.12+)
-- [Rust](https://rustup.rs) (stable) — `curl https://sh.rustup.rs -sSf | sh`
-- Xcode Command Line Tools — `xcode-select --install`
+## Running it
 
-## Getting started
+You need macOS 10.15+, [Node](https://nodejs.org) 20.19+, [Rust](https://rustup.rs)
+(stable) and the Xcode command line tools (`xcode-select --install`).
 
 ```bash
-# 1. Install dependencies
 npm install
-
-# 2. Run the app in development (hot-reloads the UI, rebuilds Rust on change)
-npm run dev
+npm run dev      # hot-reloads the UI, rebuilds Rust on change
 ```
 
-There is no database to start and no server to run — the app creates its SQLite
-database on first launch.
-
-## Building a release app
+There's no server and no database to start — the app creates its SQLite file on
+first launch.
 
 ```bash
-npm run build
+npm run build    # → paperfolio/target/release/bundle/{macos,dmg}/
 ```
 
-This produces:
+The build is unsigned, so the first launch needs a right-click → Open to get past
+Gatekeeper. Distributing it beyond your own machine would need an Apple Developer
+ID and notarization.
 
-- `src-tauri/target/release/bundle/macos/Paperfolio.app`
-- `src-tauri/target/release/bundle/dmg/Paperfolio_0.1.0_aarch64.dmg`
+Also: `npm run typecheck` for the frontend, `npm run dev:client` to run the Vite
+server on its own and poke at the UI in a browser.
 
-The build is unsigned. To distribute it outside your own machine you'll need an
-Apple Developer ID and notarization; locally, right-click → Open the first time
-to bypass Gatekeeper.
+## Your data
 
-## Where your data lives
-
-Everything sits in one visible folder in your Documents:
+One visible folder, in Documents:
 
 ```
 ~/Documents/Paperfolio_Data/
-├── paperfolio.db      # SQLite database (WAL mode)
-└── uploads/           # imported PDFs, one per paper
+├── paperfolio.db      # SQLite, WAL mode
+├── uploads/           # imported PDFs
+└── notes/             # markdown mirror, one folder per paper
 ```
 
-**Backing up** — copy the whole `Paperfolio_Data` folder. That is the complete
-library; there is no state anywhere else.
+That folder is the whole library — copy it to back up, copy it onto another Mac
+to move. Quit the app first so SQLite checkpoints its write-ahead log. Delete it
+and you're back to an empty library.
 
-**Migrating to another Mac** — quit Paperfolio, copy `Paperfolio_Data` into the
-other Mac's Documents folder, and launch the app there. Quit first so SQLite has
-checkpointed its write-ahead log.
+Libraries from earlier builds lived in `~/Library/Application Support/com.paperfolio.app`.
+If one is there and `Paperfolio_Data` isn't, the app copies it over on first
+launch (via `VACUUM INTO`, so no recent writes are lost) and leaves the original
+alone.
 
-Deleting the folder resets the app to an empty library.
+## How it's put together
 
-> Libraries created by earlier builds lived in
-> `~/Library/Application Support/com.paperfolio.app`. On first launch the app
-> copies such a library into `Documents/Paperfolio_Data` — using `VACUUM INTO`,
-> so no recent writes are lost — and leaves the original untouched. The copy
-> only happens when the Documents library does not exist yet.
-
-## Useful scripts
-
-| Script               | What it does                                  |
-| -------------------- | --------------------------------------------- |
-| `npm run dev`        | Run the macOS app in development mode         |
-| `npm run build`      | Build the `.app` and `.dmg` bundles           |
-| `npm run typecheck`  | Type-check the frontend                       |
-| `npm run dev:client` | Run only the Vite dev server (UI in a browser)|
-
-## Architecture
-
-The UI never speaks HTTP. Every data operation is a Tauri command invoked over
-IPC and handled in Rust:
-
-| Command             | Replaces                       |
-| ------------------- | ------------------------------ |
-| `list_papers`       | `GET /api/papers`              |
-| `get_paper`         | `GET /api/papers/:id`          |
-| `create_paper`      | `POST /api/papers`             |
-| `update_paper`      | `PATCH /api/papers/:id`        |
-| `set_paper_pdf`     | `POST /api/papers/:id/pdf`     |
-| `delete_paper`      | `DELETE /api/papers/:id`       |
-| `pdf_path`          | `GET /uploads/:file`           |
-| `list_highlights`   | `GET /api/highlights`          |
-| `create_highlight`  | `POST /api/highlights`         |
-| `update_highlight`  | `PATCH /api/highlights/:id`    |
-| `delete_highlight`  | `DELETE /api/highlights/:id`   |
-| `list_notes`        | `GET /api/notes`               |
-| `create_note`       | `POST /api/notes`              |
-| `update_note`       | `PATCH /api/notes/:id`         |
-| `delete_note`       | `DELETE /api/notes/:id`        |
-| `list_ideas`        | `GET /api/ideas`               |
-| `create_idea`       | `POST /api/ideas`              |
-| `delete_idea`       | `DELETE /api/ideas/:id`        |
-
-PDFs are served to the webview through Tauri's asset protocol, scoped to the
-uploads directory, rather than over a static file route.
-
-## Project layout
+Tauri v2: a Rust core behind a WKWebView running React 18 + TypeScript, built by
+Vite. The UI never speaks HTTP — every data operation is a Tauri command invoked
+over IPC (`list_papers`, `create_highlight`, `update_note`, …), and PDFs reach the
+webview through Tauri's asset protocol scoped to the uploads directory.
 
 ```
-├── src-tauri/               # Rust core
+├── paperfolio/              # Rust core
 │   ├── tauri.conf.json      # window, CSP, bundle config
 │   ├── capabilities/        # IPC permissions
 │   └── src/
-│       ├── main.rs
 │       ├── lib.rs           # command registration, app setup
-│       ├── db.rs            # SQLite schema + connection state
+│       ├── db.rs            # schema, connection state, data dir
+│       ├── markdown.rs      # note → .md mirroring
+│       ├── patch.rs         # partial-update helpers
 │       ├── error.rs
-│       ├── papers.rs        # commands, one module per entity
-│       ├── highlights.rs
-│       ├── notes.rs
-│       └── ideas.rs
-└── client/                  # Vite + React + TS frontend
-    └── src/
-        ├── pages/           # LibraryPage, PaperPage
-        ├── components/      # PdfViewer, HighlightsSidebar, NotesPanel, IdeasPanel
-        ├── api.ts           # Tauri IPC wrapper
-        ├── dialogs.ts       # native open/confirm panels
-        └── types.ts
+│       └── papers.rs, highlights.rs, notes.rs, ideas.rs
+└── client/src/
+    ├── pages/               # WelcomePage, LibraryPage, PaperPage
+    ├── components/          # PdfViewer, HighlightsSidebar, NotesPanel,
+    │                        # IdeasPanel, MarkdownEditor, PaperFormModal, …
+    ├── api.ts               # Tauri IPC wrapper
+    └── dialogs.ts           # native open/confirm panels
 ```
+
+## License
+
+MIT.
