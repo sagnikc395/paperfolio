@@ -1,0 +1,19 @@
+{
+  "name": "paperfolio",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Read, highlight and annotate research papers.",
+  "workspaces": [
+    "client"
+  ],
+  "scripts": {
+    "dev": "tauri dev",
+    "build": "tauri build",
+    "tauri": "tauri",
+    "typecheck": "npm run typecheck -w client",
+    "dev:client": "npm run dev -w client"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2"
+  }
+}

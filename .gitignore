@@ -1,0 +1,11 @@
+node_modules/
+dist/
+*.tsbuildinfo
+
+# Rust / Tauri
+paperfolio/target/
+paperfolio/gen/
+
+# macOS
+.DS_Store
+

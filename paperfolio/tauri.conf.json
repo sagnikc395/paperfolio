@@ -1,0 +1,48 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Paperfolio",
+  "version": "0.1.0",
+  "identifier": "com.paperfolio.app",
+  "build": {
+    "beforeDevCommand": "npm run dev -w client",
+    "devUrl": "http://localhost:5173",
+    "beforeBuildCommand": "npm run build -w client",
+    "frontendDist": "../client/dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "Paperfolio",
+        "width": 1280,
+        "height": 860,
+        "minWidth": 900,
+        "minHeight": 600,
+        "titleBarStyle": "Visible"
+      }
+    ],
+    "security": {
+      "csp": {
+        "default-src": "'self'",
+        "img-src": "'self' asset: http://asset.localhost data: blob:",
+        "style-src": "'self' 'unsafe-inline'",
+        "script-src": "'self' 'wasm-unsafe-eval'",
+        "worker-src": "'self' blob:",
+        "connect-src": "'self' asset: http://asset.localhost ipc: http://ipc.localhost data: blob:"
+      },
+      "assetProtocol": {
+        "enable": true,
+        "scope": []
+      }
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["app", "dmg"],
+    "icon": ["icons/icon.icns"],
+    "category": "Productivity",
+    "shortDescription": "Read, highlight and annotate research papers.",
+    "macOS": {
+      "minimumSystemVersion": "10.15"
+    }
+  }
+}
