@@ -1,4 +1,4 @@
-# Paperfolio
+# paperfolio
 
 A macOS app for reading research papers and keeping what you learn from them.
 
